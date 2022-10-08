@@ -1,0 +1,151 @@
+---
+title: "PSTAT 220A Section 01"
+author: "Jaxon Stuhr"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: html_document
+urlcolor: blue
+fontsize: 11pt
+header-includes:
+  - '\usepackage{amsmath,amsthm,amssymb}'
+  - '\newcommand{\tp}{^\intercal}'
+  - '\DeclareMathOperator{\E}{\mathbb{E}}'
+  - '\DeclareMathOperator{\cov}{\mathbb{C}\text{ov}}'
+  - '\DeclareMathOperator{\var}{\mathbb{V}\text{ar}}'
+  - '\DeclareMathOperator{\I}{\mathbbm{1}}'
+  - '\renewcommand{\vec}[1]{\bm{\mathbf #1}}'
+---
+
+```{r, echo=FALSE, message=FALSE, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(tidyverse)
+library(latex2exp)
+
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+# set global chunk options: images will be 7x5 inches
+#knitr::opts_chunk$set(fig.width=7, fig.height=5, fig.align='center')
+options(digits = 4)
+options(scipen = 1)
+indent1 = '    '
+indent2 = '        '
+indent3 = '            '
+```
+
+**Note:** Today's material is from tutorials by [Coding Club](https://ourcodingclub.github.io/tutorials/rmarkdown/) and [R Studio](https://rmarkdown.rstudio.com/index.html).
+
+## R Markdown
+R Markdown is a file format for writing reproducible, dynamic reports with R. Use it to embed R code and results into slideshows, pdfs, html documents, word files and more. A \texttt{.Rmd} file is a simple plain text file with three types of content: \texttt{YAML} metadata, text and code chunks, like the document below.
+
+\begin{figure}
+\begin{center}
+#\includegraphics[width=300pt]{RMarkdown.png}
+\end{center}
+\end{figure}
+
+**\texttt{YAML} Header**: at the top of any RMarkdown script is a \texttt{YAML} header section. By default this includes a title, author, date and the file type you want to output to. Many other options are available for different functions and formatting, see [here](https://bookdown.org/yihui/rmarkdown/html-document.html) for \texttt{.html} options and [here](https://bookdown.org/yihui/rmarkdown/pdf-document.html) for \texttt{.pdf} options. Rules in the header section will alter the whole document. 
+
+**Code Chunks**: below the \texttt{YAML} header is the space where you will write your code, accompanying explanation and any outputs. Codes included in your \texttt{.Rmd} document should be enclosed by chunk delimiters. When you render your \texttt{.Rmd} file, R Markdown will run each code chunk and embed the results beneath the code chunk in your final report.
+
+You can also customize chunk output with [knitr options](https://yihui.org/knitr/options/). And arguments are set in the \texttt{\{ \}} of a chunk header. See [R Markdown Reference Guide](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf?_ga=2.34482913.1386655696.1601928126-343717157.1601928126) for a complete list of knitr chunk options. Moreover, to set global options that apply to every chunk in your file, call \texttt{knitr::opts\_chunk\$set} in a code chunk. \texttt{Knitr} will treat each option that you pass to \texttt{knitr::opts\_chunk\$set} as a global default that can be overwritten in individual chunk headers.
+
+## Formatting Text
+
+### Basic Formatting
+
+I only list some syntax here. See [R Markdown Cheatsheets](https://rmarkdown.rstudio.com/lesson-15.html) for more syntax.  
+
+* __Paragraph Breaks__: To insert a break between paragraphs, include a single completely blank line. To force a line break, put two blank spaces at the end of a line.   
+
+* __Headers__: The character \texttt{\#} at the beginning of a line means that the rest of the line is interpreted as a section header. The number of \texttt{\#}'s at the beginning of the line indicates whether it is treated as a section, sub-section, sub-sub-section, etc. of the document.
+
+* __Italics and Boldface__: Text to be _italicized_ goes inside a single set of underscores or asterisks. Text to be __boldfaced__ goes inside a double set of underscores or asterisks.
+
+### Inline Code
+
+Code output can also be seamlessly incorporated into the text, using **inline code**. This is code not set off on a line by itself, but beginning with \texttt{$\grave{\ }$r} and ending with \texttt{$\grave{\ }$}. Using inline code is how this document knows that $1+2+\cdots+100$ equals to `r sum(1:100)`.
+
+### Mathematical Formula
+
+R Markdown gives you the syntax to render complex mathematical formulas and derivations, and have them displayed very nicely. The syntax is same as \LaTeX. And like code, the math can either be inline or set off.  
+
+Inline mathematical formula is marked off with a pair of dollar signs (\texttt{\$}), such as $\bar{X}=\frac{1}{n}\sum_{j=1}^nX_j$. Mathematical displays are marked off with \texttt{$\backslash$[} and \texttt{$\backslash$]}, as in
+
+```
+\[
+\bar{X}=\frac{1}{n}\sum_{j=1}^nX_j
+\]
+```
+\[
+\bar{X}=\frac{1}{n}\sum_{j=1}^nX_j.
+\]
+
+You can also use environments, such as \texttt{align}, \texttt{eqnarray}, and etc. from \LaTeX. See section 3.10 from [_The Not So Short
+Introduction to \LaTeXe_](https://mirror.las.iastate.edu/tex-archive/info/lshort/english/lshort.pdf) for list of mathematical symbols.  
+
+## Inserting Figures
+
+Inserting a graph generated by \texttt{R} into RMarkdown is relatively easy. By default, RMarkdown will place graphs by maximizing their height, while keeping them within the margins of the page and maintaining aspect ratio. And to manually set the figure dimensions, you can insert an instruction into the curly braces:
+
+```{r, fig.width = 5, fig.height = 5, fig.align = "center"}
+library(ISLR) 
+data("Wage") 
+boxplot(wage~unclass(education),data=Wage,pch=19,cex=0.5,
+        col=c("#5fa5d6","#08966c","#d2dd4e","#1d70b0","#cc6320"),
+        xlab="Education Level",ylab="Wage")
+```
+
+You can also insert a local image by the following syntax:
+```
+ ![](path/to/smallorb.png)
+```
+However, it is not easy to adjust the location and parameters of a figure by the above code. I would recommend you to use the picture environment from \LaTeX.  
+
+## Inserting Tables
+
+Tables are important in statistical reports. There are several ways to insert tables in your \texttt{.Rmd} files. And we first create the following data frame, and then use it for illustration.
+```{r}
+Plant <- c("A", "B", "C")
+Temp. <- c(20, 20, 20)
+Growth <- c(0.65, 0.95, 0.15)
+da <- data.frame(Plant, Temp., Growth)
+```
+
+You can directly print the content of a data frame with the following syntax.
+```{r}
+da
+```
+However, this table looks a bit messy.
+
+### \texttt{kable( )} function in \texttt{knitr} package
+
+The simplest table formatting function is \texttt{kable( )} function in \texttt{knitr} package. The first argument tells \texttt{kable} to make a table out of the target data frame and that numbers should have at most two digits.
+```{r}
+kable(da, digits = 2)
+```
+    
+See [_Create Awesome \LaTeX Table with \texttt{knitr::kable} and \texttt{kableExtra}_](https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf) for more details and examples.
+
+### Manually creating tables using markdown syntax  
+
+You can also manually create small tables using markdown syntax. For example:  
+```
+| Plant | Temp. | Growth |
+|:------|:-----:|-------:|
+| A     | 20    | 0.65   |
+| B     | 20    | 0.95   |
+| C     | 20    | 0.15   |
+```
+will create something that looks like this:
+
+| Plant | Temp. | Growth |
+|:------|:-----:|-------:|
+| A     | 20    | 0.65   |
+| B     | 20    | 0.95   |
+| C     | 20    | 0.15   |
+
+The \texttt{:-----:} tells markdown that the line above should be treated as a header and the lines below should be treated as the body of the table. Text alignment of the columns is set by the position of \texttt{:}.  
+
+_**Get your hand dirty, and try to write your homework with R Markdown!**_
+        

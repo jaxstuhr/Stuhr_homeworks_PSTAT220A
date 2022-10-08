@@ -1,0 +1,273 @@
+---
+title: 'PSTAT 220A HW #1'
+author: "Jaxon Stuhr"
+date: '2022-09-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(faraway)
+library(car)
+library(MASS)
+```
+
+# Question 1
+```{r, echo=TRUE}
+# this function returns the standard deviation, mean absolute deviation, median absolute deviation, and inter-quartile range of dataset_x
+dispersion_measures = function(dataset_x) {
+  sd = sd(dataset_x) # standard deviation
+  mean_ad = mad(dataset_x, center = mean(dataset_x)) # mean absolute deviation
+  median_ad = mad(dataset_x, center = median(dataset_x)) # median absolute deviation
+  iqr = IQR(dataset_x) # inter-quartile range
+  return(c(sd, mean_ad, median_ad, iqr))
+}
+```
+
+# Question 2
+```{r}
+pima_dataset = pima
+
+# dispersion measures for each paramters
+vals_pregnant = dispersion_measures(pima_dataset$pregnant)
+vals_diastolic = dispersion_measures(pima_dataset$diastolic)
+vals_bmi = dispersion_measures(pima_dataset$bmi)
+vals_age = dispersion_measures(pima_dataset$age)
+
+# "pregnant" plots
+par(mfrow=c(2,2))
+boxplot(pima_dataset$pregnant, main = "Boxplot", ylab = "Number of Times Pregnant")
+hist(pima_dataset$pregnant, main = "Histogram", xlab = "Number of Times Pregnant", ylab = "Count")
+qqPlot(pima_dataset$pregnant, main = "QQ-Plot", ylab = "Sample Quantiles", xlab = "Theoretical Quantiles")
+d = density(pima_dataset$pregnant)
+plot(d, 
+     xlim = c(-5,20), 
+     main = "Kernel Density Estimate", 
+     xlab="Times Pregnant",
+     ylab = "Density")
+
+# "diastolic" plots
+par(mfrow=c(2,2))
+boxplot(pima_dataset$diastolic, main = "Boxplot", ylab = "Diastolic blood pressure (mm Hg)")
+hist(pima_dataset$diastolic, main = "Histogram", xlab = "Diastolic blood pressure (mm Hg)", ylab = "Count")
+qqPlot(pima_dataset$diastolic, main = "QQ-Plot", ylab = "Sample Quantiles", xlab = "Theoretical Quantiles")
+d = density(pima_dataset$diastolic)
+plot(d, 
+     xlim = c(-10,10), 
+     main = "Kernel Density Estimate", 
+     xlab="Diastolic blood pressure (mm Hg)",
+     ylab = "Density")
+
+# "bmi" plots
+par(mfrow=c(2,2))
+boxplot(pima_dataset$bmi, main = "Boxplot", ylab = "Body Mass Index (BMI)")
+hist(pima_dataset$bmi, main = "Histogram", xlab = "Body Mass Index (BMI)", ylab = "Count")
+qqPlot(pima_dataset$bmi, main = "QQ-Plot", ylab = "Sample Quantiles", xlab = "Theoretical Quantiles")
+d = density(pima_dataset$bmi)
+plot(d, 
+     xlim = c(0,90), 
+     main = "Kernel Density Estimate", 
+     xlab="Body Mass Index (BMI)",
+     ylab = "Density")
+
+# "age" plots
+par(mfrow=c(2,2))
+boxplot(pima_dataset$age, main = "Boxplot", ylab = "Age (years)")
+hist(pima_dataset$age, main = "Histogram", xlab = "Age (years)", ylab = "Count")
+qqPlot(pima_dataset$age, main = "QQ-Plot", ylab = "Sample Quantiles", xlab = "Theoretical Quantiles")
+d = density(pima_dataset$age)
+plot(d, 
+     xlim = c(0,90), 
+     main = "Kernel Density Estimate", 
+     xlab="Age (years)",
+     ylab = "Density")
+
+```
+
+Pregnant: a few very high outliers, distribution appears to be Gamma
+
+Blood Pressure: distribution looks normal except for outliers with extremely low bloodpressure
+
+BMI: distribution also looks relatively normal, but again there are extreme outliers with very low BMI that fall outside the distribution
+
+Age: looks like a gamma distribution, or exponential after year 18... Definitely not normal due to QQ-plot being highly non-linear
+
+
+# Question 3
+```{r}
+precip = data.frame(vals = (c(0.77, 1.20, 3.00, 1.62, 2.81, 2.48, 1.74, 0.47, 
+                      3.09, 1.31, 1.87, 0.96, 0.81, 1.43, 1.51, 0.32, 
+                      1.18, 1.89, 1.20, 3.37,2.10, 0.59, 1.35, 0.90, 
+                      1.95, 2.20, 0.52, 0.81, 4.75, 2.05)) )
+qqPlot(precip$vals, xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
+```
+
+Looks farily normal, but tails are not linear. Try log(precip)...
+
+```{r}
+precip = precip %>% 
+  mutate(log_vals = log(vals))
+
+qqPlot(precip$log_vals, xlab = "Theoretical Quantiles", ylab = "log(Sample) Quantiles")
+```
+
+That looks like a normal distribution!
+
+# Question 4
+
+```{r}
+set.seed(127)
+
+failure_times = data.frame(times = c(4381, 3953, 2603, 2320, 1161, 3286, 6914,
+                                     4007, 3168, 2376, 7498, 3923 ,9460 ,4525,
+                                     2168, 1288, 5085, 2217, 6922, 218, 1309,
+                                     1875, 1023, 1697, 1038, 3699, 6142,4732,
+                                     3330, 4159 ,2537, 3814, 2157, 
+                                     7683, 5539,4839,6052,
+                                     2420, 5556, 309, 1295, 3266, 6679, 
+                                     1711, 5931))
+
+points = ppoints(failure_times$times)
+
+par(mfrow=c(2,2))
+
+# Normal Distribution fit and QQ-plot
+fit.normal = fitdistr(failure_times$times/100, 
+                      "normal", 
+                      lower = 0.001)
+plot(qnorm(points, mean = fit.normal$estimate[1], sd = fit.normal$estimate[2]),
+     sort(failure_times$times/100),
+     xlim = c(0,100), 
+     ylim = c(0,100),
+     main = "Normal Q-Q plot",
+     xlab="Theoretical Quantiles",
+     ylab = "Sample Quantiles"
+     )
+abline(0,1)
+
+# Lognormal Distribution fit and QQ-plot
+fit.lognormal = fitdistr(failure_times$times/100, 
+                      "lognormal", 
+                      lower = 0.001)
+plot(qlnorm(points, meanlog = fit.lognormal$estimate[1], sdlog = fit.lognormal$estimate[2]),
+     sort(failure_times$times/100),
+     xlim = c(0,120), 
+     ylim = c(0,120),
+     main = "Lognormal Q-Q plot",
+     xlab="Theoretical Quantiles",
+     ylab = "Sample Quantiles"
+     )
+abline(0,1)
+
+# Exponential Distribution fit and QQ-plot
+fit.exponential = fitdistr(failure_times$times/100, 
+                      "exponential", 
+                      lower = 0.001)
+plot(qexp(points, rate = fit.exponential$estimate[1]),
+     sort(failure_times$times/100),
+     xlim = c(0,120), 
+     ylim = c(0,120),
+     main = "Exponential Q-Q plot",
+     xlab="Theoretical Quantiles",
+     ylab = "Sample Quantiles"
+     )
+abline(0,1)
+
+# Gamma Distribution fit and QQ-plot
+fit.gamma <- fitdistr(failure_times$times/100, 
+                      "gamma", 
+                      list(shape=1,rate=1),
+                      lower = 0.001)
+plot(qgamma(points, shape = fit.gamma$estimate[1], rate = fit.gamma$estimate[2]), 
+     sort(failure_times$times/100),
+     xlim = c(0,120), 
+     ylim = c(0,120),
+     main = "Gamma Q-Q plot",
+     xlab="Theoretical Quantiles",
+     ylab = "Sample Quantiles")
+abline(0,1)
+
+```
+
+Based on the above plots, the Gamma distribution appears to fit best as the points closely follow the line, except for the last two outliers. The Normal distribution fits relatively well, and the exponential and lognormal are very poor fits.
+
+```{r}
+set.seed(127)
+# compare Gamma PDF with Kernel Density Estimate
+par(mfrow=c(1,2))
+# plot Kernel density estimate
+d = density(failure_times$times/100)
+plot(d, 
+     xlim = c(0,100), 
+     main = "Kernel Density Estimate", 
+     xlab="Failure Times",
+     ylab = "Density")
+# plot gamma density function
+xgamma = seq(0,100,by = 1)
+plot(dgamma(xgamma, 
+            shape = fit.gamma$estimate[1], 
+            rate = fit.gamma$estimate[2]), 
+     xlim = c(0,100),
+     main = "Gamma Distribution",
+     xlab = "Failure Times",
+     ylab = "Density")
+```
+
+Gamma distribution with given paramters aligns quite well with KDE!
+
+# Question 5
+
+```{r}
+# generate exponential samples
+exp_samples = rexp(n = 5000, rate = 1)
+
+# plot histogram
+hist(exp_samples, main = "Histogram of Samples", xlab = "Sample Value", ylab = "Count")
+```
+
+The shape drops of as x increases but has a long tail, as we would expect because the exponential function goes as $f(x) = e^{-x}$
+
+```{r}
+# generate samples and means blank matrices
+samples = matrix(0, 100, 50)
+means = matrix(0, 1, 50)
+# build samples matrix from exp_samples
+for (x in 1:50) {
+  samples[,x] = exp_samples[(1+100*(x-1)):(100*x)]
+}
+# calculate means for each grouping
+for (x in 1:50) {
+  sample_mean = mean(samples[, x])
+  means[1,x] = sample_mean
+}
+# plot histogram
+hist(means, main = "Histogram of Means", xlab = "Mean Value", ylab = "Frequency")
+```
+
+They don't have the same shape, because the larger values that make up the tail of the exponential histogram will be averaged with the higher density of lower values, leaving a more normal distribution around 1. 
+
+# Question 6
+
+```{r}
+# generate exponential samples
+normal_samples = rnorm(n = 600, mean = 10, sd = 5)
+# generate samples and means blank matrices
+normal_groups = matrix(0, 6, 100)
+stats = matrix(0, 1, 100)
+# build samples matrix from exp_samples
+for (x in 1:100) {
+  normal_groups[,x] = normal_samples[(1+6*(x-1)):(6*x)]
+}
+# calculate means for each grouping
+for (x in 1:100) {
+  group_mean = mean(normal_groups[, x])
+  group_var = var(normal_groups[,x])
+  stats[1,x] = (group_mean - 10)/sqrt(group_var/6)
+}
+# plot histogram
+hist(stats, main = "Histogram of Statistics", xlab = "Statistic Value", ylab = "Frequency")
+```
+
+We would expect this statistic to be normally distributed about zero, which it is. 
